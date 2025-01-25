@@ -19,24 +19,28 @@ export class AuthController {
     res.cookie('access_token', token, {
       httpOnly: true,
       sameSite: 'strict',
-      maxAge: 60 * 60 * 1000, // 1 hour
+      maxAge: 60 * 60 * 1000,
     });
   }
 
   @Post('signup')
   async signup(@Body() body: SignUpDto, @Res() res: Response) {
     try {
-      const token = await this.authService.signup(body);
+      const { token, user } = await this.authService.signup(body);
 
-      if (!token || !token.access_token) {
+      if (!token && !user) {
         throw new InternalServerErrorException(
           'Failed to generate access token.',
         );
       }
 
-      this.setCookie(res, token.access_token);
+      this.setCookie(res, token);
 
-      return res.status(201).json({ message: 'Signup successful' });
+      return res.status(201).json({
+        message: 'Signup successful',
+        token,
+        user,
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw new BadRequestException(error.message);
@@ -50,17 +54,21 @@ export class AuthController {
   @Post('signin')
   async signin(@Body() body: SignInDto, @Res() res: Response) {
     try {
-      const token = await this.authService.signin(body);
+      const { token, user } = await this.authService.signin(body);
 
-      if (!token || !token.access_token) {
+      if (!token && !user) {
         throw new InternalServerErrorException(
           'Failed to generate access token.',
         );
       }
 
-      this.setCookie(res, token.access_token);
+      this.setCookie(res, token);
 
-      return res.status(200).json({ message: 'Signin successful' });
+      return res.status(200).json({
+        message: 'Signin successful',
+        user,
+        token,
+      });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw new BadRequestException(error.message);

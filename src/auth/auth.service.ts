@@ -40,7 +40,11 @@ export class AuthService {
 
       const savedUser = await this.usersRepository.save(user);
 
-      return this.signToken(savedUser.id, savedUser.email);
+      const { password, ...userWithoutPassword } = savedUser;
+
+      const { access_token } = await this.signToken(user.id, user.email);
+
+      return { user: userWithoutPassword, token: access_token };
     } catch (error) {
       throw new InternalServerErrorException(
         `Signup failed: ${error.message || 'Unexpected error occurred.'}`,
@@ -66,10 +70,14 @@ export class AuthService {
         throw new ForbiddenException('Invalid credentials.');
       }
 
-      return this.signToken(user.id, user.email);
+      const { password, ...userWithoutPassword } = user;
+
+      const { access_token } = await this.signToken(user.id, user.email);
+
+      return { user: userWithoutPassword, token: access_token };
     } catch (error) {
       if (error instanceof ForbiddenException) {
-        throw error; // Re-throw forbidden errors.
+        throw error;
       }
       throw new InternalServerErrorException(
         `Signin failed: ${error.message || 'Unexpected error occurred.'}`,

@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Inject,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +10,8 @@ import { Article } from 'src/entities/article.entity';
 import { firstValueFrom } from 'rxjs';
 import { Tag } from 'src/entities';
 import { AxiosError } from 'axios';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class ArticlesService {
@@ -17,6 +23,8 @@ export class ArticlesService {
     @InjectRepository(Tag)
     private tagsRepository: Repository<Tag>,
     private httpService: HttpService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
   ) {}
 
   async fetchArticles(): Promise<Article[]> {
@@ -123,18 +131,20 @@ export class ArticlesService {
 
   async getTags(): Promise<Tag[]> {
     try {
-      const tags = await this.tagsRepository.find();
+      const cachedTags = await this.cacheManager.get<Tag[]>('tags');
+      if (cachedTags) {
+        return cachedTags;
+      }
 
-      if (!tags) {
-        throw new InternalServerErrorException(
-          'No tags found in the database.',
-        );
+      const tags = await this.tagsRepository.find();
+      if (tags.length) {
+        await this.cacheManager.set('tags', tags, 360000);
       }
 
       return tags;
     } catch (error) {
       throw new InternalServerErrorException(
-        `Failed to retrieve tags from the database: ${error.message}`,
+        `Failed to retrieve unique tags from articles: ${error.message}`,
       );
     }
   }

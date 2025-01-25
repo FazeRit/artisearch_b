@@ -35,6 +35,7 @@ export class FavoritesController {
     @GetUser() user: User,
     @Query('articleId') articleId: string,
   ) {
+    console.log(articleId);
     const articleIdNumber = parseInt(articleId, 10);
     if (isNaN(articleIdNumber)) {
       throw new BadRequestException('Invalid articleId. Must be a number.');

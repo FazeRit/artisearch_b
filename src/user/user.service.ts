@@ -29,7 +29,6 @@ export class UserService {
 
       const cachedProfile = await this.cacheManager.get(`profile-${userId}`);
       if (cachedProfile) {
-        console.log('Returning cached profile');
         return cachedProfile;
       }
 
