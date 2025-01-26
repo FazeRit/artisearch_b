@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards, Get, Query, Body } from '@nestjs/common';
+import { Controller, Post, UseGuards, Body } from '@nestjs/common';
 import { ElsearchService } from './elsearch.service';
 import { JwtGuard } from 'src/auth/guard/index';
 import { FilterDto } from 'src/common/dto';
@@ -13,14 +13,19 @@ export class ElsearchController {
     return await this.elsearchService.index();
   }
 
-  @UseGuards(JwtGuard)
-  @Get('search')
-  async searchArticles(
-    @Query('q') q: string,
-    @Query('page') page: number,
-    @Query('perPage') perPage: number,
-    @Body() filter: FilterDto,
-  ) {
-    return this.elsearchService.searchArticles(q, page, perPage, filter);
+  @Post('search')
+  async searchArticles(@Body() filter: FilterDto) {
+    const filterWithDefaults: FilterDto = {
+      page: filter.page ?? 1,
+      perPage: filter.perPage ?? 10,
+      ...filter,
+    };
+
+    return this.elsearchService.searchArticles(
+      filterWithDefaults.q,
+      filterWithDefaults.page,
+      filterWithDefaults.perPage,
+      filterWithDefaults,
+    );
   }
 }

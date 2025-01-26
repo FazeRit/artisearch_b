@@ -32,7 +32,6 @@ export class UserService {
         return cachedProfile;
       }
 
-      console.log('Fetching profile from database');
       const user = await this.usersRepository.findOne({
         where: { id: userId },
         select: {
@@ -50,7 +49,7 @@ export class UserService {
 
       const { id, ...profile } = user;
 
-      await this.cacheManager.set(`profile-${userId}`, profile, 60000);
+      await this.cacheManager.set(`profile-${id}`, profile, 60000);
 
       return profile;
     } catch (error) {
